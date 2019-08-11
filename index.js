@@ -33,9 +33,9 @@ module.exports = function parse(feedXML, callback) {
       // root channel
       node.target = result;
       node.textMap = {
-        'title': true,
-        'link': true,
-        'language': function language(text) {
+        title: true,
+        link: true,
+        language: function language(text) {
           var lang = text;
           if (!/\w\w-\w\w/i.test(text)) {
             if (lang === 'en') {
@@ -50,11 +50,11 @@ module.exports = function parse(feedXML, callback) {
         },
         'itunes:author': 'author',
         'itunes:subtitle': 'description.short',
-        'description': 'description.long',
-        'ttl': function ttl(text) {
+        description: 'description.long',
+        ttl: function ttl(text) {
           return { ttl: parseInt(text) };
         },
-        'pubDate': function pubDate(text) {
+        pubDate: function pubDate(text) {
           return { updated: new Date(text) };
         },
         'itunes:explicit': isExplicit,
@@ -65,7 +65,7 @@ module.exports = function parse(feedXML, callback) {
     } else if (node.name === 'image' && node.parent.name === 'channel' && !result.image) {
       result.image = node.target = {};
       node.textMap = {
-        'url': true
+        url: true
       };
     } else if (node.name === 'itunes:owner' && node.parent.name === 'channel') {
       result.owner = node.target = {};
@@ -94,11 +94,11 @@ module.exports = function parse(feedXML, callback) {
       tmpEpisode = {};
       node.target = tmpEpisode;
       node.textMap = {
-        'title': true,
-        'guid': true,
+        title: true,
+        guid: true,
         'itunes:summary': 'description.primary',
-        'description': 'description.alternate',
-        'pubDate': function pubDate(text) {
+        description: 'description.alternate',
+        pubDate: function pubDate(text) {
           return { published: new Date(text) };
         },
         'itunes:duration': function itunesDuration(text) {
@@ -195,8 +195,9 @@ module.exports = function parse(feedXML, callback) {
   parser.onend = function () {
     // sort by date descending
     if (result.episodes) {
+      var noDate = new Date(0);
       result.episodes = result.episodes.sort(function (item1, item2) {
-        return item2.published.getTime() - item1.published.getTime();
+        return (item2.published || noDate).getTime() - (item1.published || noDate).getTime();
       });
     }
 

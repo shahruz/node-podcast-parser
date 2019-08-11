@@ -16,7 +16,7 @@ module.exports = function parse(feedXML, callback) {
 
   var tmpEpisode;
 
-  parser.onopentag = function (nextNode) {
+  parser.onopentag = function(nextNode) {
     node = {
       name: nextNode.name,
       attributes: nextNode.attributes,
@@ -31,9 +31,9 @@ module.exports = function parse(feedXML, callback) {
       // root channel
       node.target = result;
       node.textMap = {
-        'title': true,
-        'link': true,
-        'language': text => {
+        title: true,
+        link: true,
+        language: text => {
           var lang = text;
           if (!/\w\w-\w\w/i.test(text)) {
             if (lang === 'en') {
@@ -44,21 +44,30 @@ module.exports = function parse(feedXML, callback) {
               lang = `${lang}-${lang}`;
             }
           }
-          return { language: lang.toLowerCase() }; },
+          return { language: lang.toLowerCase() };
+        },
         'itunes:author': 'author',
         'itunes:subtitle': 'description.short',
-        'description': 'description.long',
-        'ttl': text => { return { ttl: parseInt(text) }; },
-        'pubDate': text => { return { updated: new Date(text) }; },
+        description: 'description.long',
+        ttl: text => {
+          return { ttl: parseInt(text) };
+        },
+        pubDate: text => {
+          return { updated: new Date(text) };
+        },
         'itunes:explicit': isExplicit,
-        'itunes:type': 'type',
+        'itunes:type': 'type'
       };
     } else if (node.name === 'itunes:image' && node.parent.name === 'channel') {
       result.image = node.attributes.href;
-    } else if (node.name === 'image' && node.parent.name === 'channel' && !result.image) {
+    } else if (
+      node.name === 'image' &&
+      node.parent.name === 'channel' &&
+      !result.image
+    ) {
       result.image = node.target = {};
       node.textMap = {
-        'url': true,
+        url: true
       };
     } else if (node.name === 'itunes:owner' && node.parent.name === 'channel') {
       result.owner = node.target = {};
@@ -84,15 +93,16 @@ module.exports = function parse(feedXML, callback) {
       }
     } else if (node.name === 'item' && node.parent.name === 'channel') {
       // New item
-      tmpEpisode = {
-      };
+      tmpEpisode = {};
       node.target = tmpEpisode;
       node.textMap = {
-        'title': true,
-        'guid': true,
+        title: true,
+        guid: true,
         'itunes:summary': 'description.primary',
-        'description': 'description.alternate',
-        'pubDate': text => { return { published: new Date(text) }; },
+        description: 'description.alternate',
+        pubDate: text => {
+          return { published: new Date(text) };
+        },
         'itunes:duration': text => {
           return {
             // parse '1:03:13' into 3793 seconds
@@ -112,7 +122,7 @@ module.exports = function parse(feedXML, callback) {
         'itunes:explicit': isExplicit,
         'itunes:season': 'season',
         'itunes:episode': 'episode',
-        'itunes:episodeType': 'episodeType',
+        'itunes:episodeType': 'episodeType'
       };
     } else if (tmpEpisode) {
       // Episode specific attributes
@@ -121,7 +131,9 @@ module.exports = function parse(feedXML, callback) {
         tmpEpisode.image = node.attributes.href;
       } else if (node.name === 'enclosure') {
         tmpEpisode.enclosure = {
-          filesize: node.attributes.length ? parseInt(node.attributes.length) : undefined,
+          filesize: node.attributes.length
+            ? parseInt(node.attributes.length)
+            : undefined,
           type: node.attributes.type,
           url: node.attributes.url
         };
@@ -129,7 +141,7 @@ module.exports = function parse(feedXML, callback) {
     }
   };
 
-  parser.onclosetag = function (name) {
+  parser.onclosetag = function(name) {
     node = node.parent;
 
     if (tmpEpisode && name === 'item') {
@@ -139,13 +151,20 @@ module.exports = function parse(feedXML, callback) {
       // coalesce descriptions (no breaking change)
       let description = '';
       if (tmpEpisode.description) {
-        description = tmpEpisode.description.primary || tmpEpisode.description.alternate || '';
+        description =
+          tmpEpisode.description.primary ||
+          tmpEpisode.description.alternate ||
+          '';
       }
       tmpEpisode.description = description;
       result.episodes.push(tmpEpisode);
       tmpEpisode = null;
     }
-    if (name === 'image' && result.hasOwnProperty('image') && result.image.hasOwnProperty('url')) {
+    if (
+      name === 'image' &&
+      result.hasOwnProperty('image') &&
+      result.image.hasOwnProperty('url')
+    ) {
       result.image = result.image.url;
     }
   };
@@ -174,7 +193,11 @@ module.exports = function parse(feedXML, callback) {
           const prevValue = node.parent.target[keyName];
           // ontext can fire multiple times, if so append to previous value
           // this happens with "text &amp; other text"
-          _.set(node.parent.target, keyName, prevValue ? `${prevValue} ${text}` : text);
+          _.set(
+            node.parent.target,
+            keyName,
+            prevValue ? `${prevValue} ${text}` : text
+          );
         }
       }
     }
@@ -190,8 +213,12 @@ module.exports = function parse(feedXML, callback) {
   parser.onend = function() {
     // sort by date descending
     if (result.episodes) {
-      result.episodes = result.episodes.sort((item1, item2) => {
-        return item2.published.getTime() - item1.published.getTime();
+      const noDate = new Date(0);
+      result.episodes = result.episodes.sort(function(item1, item2) {
+        return (
+          (item2.published || noDate).getTime() -
+          (item1.published || noDate).getTime()
+        );
       });
     }
 
@@ -206,7 +233,7 @@ module.exports = function parse(feedXML, callback) {
     result.categories = _.uniq(result.categories);
 
     callback(null, result);
-  }
+  };
 
   // Annoyingly sax also emits an error
   // https://github.com/isaacs/sax-js/pull/115
@@ -215,10 +242,10 @@ module.exports = function parse(feedXML, callback) {
   } catch (error) {
     callback(error);
   }
-}
+};
 
 function isExplicit(text) {
   return {
-    explicit: (text || '').toLowerCase() === 'yes',
+    explicit: (text || '').toLowerCase() === 'yes'
   };
 }
