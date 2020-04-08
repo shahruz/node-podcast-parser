@@ -4,23 +4,23 @@ const sax = require('sax');
 module.exports = function parse(feedXML, callback) {
   const parser = sax.parser({
     strict: true,
-    lowercase: true
+    lowercase: true,
   });
 
   // -----------------------------------------------------
 
   const result = {
-    categories: []
+    categories: [],
   };
   var node = null;
 
   var tmpEpisode;
 
-  parser.onopentag = function(nextNode) {
+  parser.onopentag = function (nextNode) {
     node = {
       name: nextNode.name,
       attributes: nextNode.attributes,
-      parent: node
+      parent: node,
     };
 
     if (!node.parent) {
@@ -33,7 +33,7 @@ module.exports = function parse(feedXML, callback) {
       node.textMap = {
         title: true,
         link: true,
-        language: text => {
+        language: (text) => {
           var lang = text;
           if (!/\w\w-\w\w/i.test(text)) {
             if (lang === 'en') {
@@ -49,14 +49,14 @@ module.exports = function parse(feedXML, callback) {
         'itunes:author': 'author',
         'itunes:subtitle': 'description.short',
         description: 'description.long',
-        ttl: text => {
+        ttl: (text) => {
           return { ttl: parseInt(text) };
         },
-        pubDate: text => {
+        pubDate: (text) => {
           return { updated: new Date(text) };
         },
         'itunes:explicit': isExplicit,
-        'itunes:type': 'type'
+        'itunes:type': 'type',
       };
     } else if (node.name === 'itunes:image' && node.parent.name === 'channel') {
       result.image = node.attributes.href;
@@ -67,13 +67,13 @@ module.exports = function parse(feedXML, callback) {
     ) {
       result.image = node.target = {};
       node.textMap = {
-        url: true
+        url: true,
       };
     } else if (node.name === 'itunes:owner' && node.parent.name === 'channel') {
       result.owner = node.target = {};
       node.textMap = {
         'itunes:name': 'name',
-        'itunes:email': 'email'
+        'itunes:email': 'email',
       };
     } else if (node.name === 'itunes:category') {
       const path = [node.attributes.text];
@@ -100,10 +100,10 @@ module.exports = function parse(feedXML, callback) {
         guid: true,
         'itunes:summary': 'description.primary',
         description: 'description.alternate',
-        pubDate: text => {
+        pubDate: (text) => {
           return { published: new Date(text) };
         },
-        'itunes:duration': text => {
+        'itunes:duration': (text) => {
           return {
             // parse '1:03:13' into 3793 seconds
             duration: text
@@ -116,13 +116,14 @@ module.exports = function parse(feedXML, callback) {
                   muliplier *= steps[index];
                 }
                 return acc + parseInt(val) * muliplier;
-              }, 0)
+              }, 0),
           };
         },
         'itunes:explicit': isExplicit,
         'itunes:season': 'season',
         'itunes:episode': 'episode',
-        'itunes:episodeType': 'episodeType'
+        'itunes:episodeType': 'episodeType',
+        'content:encoded': 'descriptionLong',
       };
     } else if (tmpEpisode) {
       // Episode specific attributes
@@ -135,13 +136,13 @@ module.exports = function parse(feedXML, callback) {
             ? parseInt(node.attributes.length)
             : undefined,
           type: node.attributes.type,
-          url: node.attributes.url
+          url: node.attributes.url,
         };
       }
     }
   };
 
-  parser.onclosetag = function(name) {
+  parser.onclosetag = function (name) {
     node = node.parent;
 
     if (tmpEpisode && name === 'item') {
@@ -210,11 +211,11 @@ module.exports = function parse(feedXML, callback) {
     }
   };
 
-  parser.onend = function() {
+  parser.onend = function () {
     // sort by date descending
     if (result.episodes) {
       const noDate = new Date(0);
-      result.episodes = result.episodes.sort(function(item1, item2) {
+      result.episodes = result.episodes.sort(function (item1, item2) {
         return (
           (item2.published || noDate).getTime() -
           (item1.published || noDate).getTime()
@@ -246,6 +247,6 @@ module.exports = function parse(feedXML, callback) {
 
 function isExplicit(text) {
   return {
-    explicit: (text || '').toLowerCase() === 'yes'
+    explicit: (text || '').toLowerCase() === 'yes',
   };
 }

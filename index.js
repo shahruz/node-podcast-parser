@@ -117,7 +117,8 @@ module.exports = function parse(feedXML, callback) {
         'itunes:explicit': isExplicit,
         'itunes:season': 'season',
         'itunes:episode': 'episode',
-        'itunes:episodeType': 'episodeType'
+        'itunes:episodeType': 'episodeType',
+        'content:encoded': 'descriptionLong'
       };
     } else if (tmpEpisode) {
       // Episode specific attributes
