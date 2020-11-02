@@ -3,7 +3,7 @@ const sax = require('sax');
 
 module.exports = function parse(feedXML, callback) {
   const parser = sax.parser({
-    strict: true,
+    strict: false,
     lowercase: true,
   });
 
@@ -33,7 +33,7 @@ module.exports = function parse(feedXML, callback) {
       node.textMap = {
         title: true,
         link: true,
-        language: (text) => {
+        language: text => {
           var lang = text;
           if (!/\w\w-\w\w/i.test(text)) {
             if (lang === 'en') {
@@ -49,10 +49,10 @@ module.exports = function parse(feedXML, callback) {
         'itunes:author': 'author',
         'itunes:subtitle': 'description.short',
         description: 'description.long',
-        ttl: (text) => {
+        ttl: text => {
           return { ttl: parseInt(text) };
         },
-        pubDate: (text) => {
+        pubDate: text => {
           return { updated: new Date(text) };
         },
         'itunes:explicit': isExplicit,
@@ -100,10 +100,10 @@ module.exports = function parse(feedXML, callback) {
         guid: true,
         'itunes:summary': 'description.primary',
         description: 'description.alternate',
-        pubDate: (text) => {
+        pubDate: text => {
           return { published: new Date(text) };
         },
-        'itunes:duration': (text) => {
+        'itunes:duration': text => {
           return {
             // parse '1:03:13' into 3793 seconds
             duration: text
@@ -138,6 +138,8 @@ module.exports = function parse(feedXML, callback) {
           type: node.attributes.type,
           url: node.attributes.url,
         };
+      } else if (node.name === 'podcast:chapters') {
+        tmpEpisode.chapters = node.attributes.url;
       }
     }
   };

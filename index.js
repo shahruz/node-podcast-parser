@@ -5,7 +5,7 @@ var sax = require('sax');
 
 module.exports = function parse(feedXML, callback) {
   var parser = sax.parser({
-    strict: true,
+    strict: false,
     lowercase: true
   });
 
@@ -24,6 +24,7 @@ module.exports = function parse(feedXML, callback) {
       attributes: nextNode.attributes,
       parent: node
     };
+    // console.log(node.name);
 
     if (!node.parent) {
       return;
@@ -131,6 +132,8 @@ module.exports = function parse(feedXML, callback) {
           type: node.attributes.type,
           url: node.attributes.url
         };
+      } else if (node.name === 'podcast:chapters') {
+        tmpEpisode.chapters = node.attributes.url;
       }
     }
   };
